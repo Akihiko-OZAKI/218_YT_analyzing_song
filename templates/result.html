@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析結果 - YouTube 音声分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <!-- ヘッダー -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">✅ 分析完了</h3>
+                        <a href="{{ url_for('index') }}" class="btn btn-light btn-sm">← 新しいURLを分析</a>
+                    </div>
+                    <div class="card-body">
+                        <h5>分析対象URL:</h5>
+                        <p class="text-break">
+                            <a href="{{ url }}" target="_blank" class="text-decoration-none">{{ url }}</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 結果表示 -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">📝 文字起こし結果</h4>
+                        <div>
+                            <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard()">📋 コピー</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="downloadText()">💾 ダウンロード</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="result-text" class="result-text">
+                            {{ text }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 統計情報 -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5>📊 統計情報</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">文字数</h6>
+                                    <h4 class="text-primary" id="char-count">{{ text|length }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">単語数</h6>
+                                    <h4 class="text-info" id="word-count">{{ text.split()|length }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">行数</h6>
+                                    <h4 class="text-warning" id="line-count">{{ text.split('\n')|length }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">処理時間</h6>
+                                    <h4 class="text-success" id="process-time">約1-3分</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const text = document.getElementById('result-text').textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                alert('結果をクリップボードにコピーしました！');
+            });
+        }
+
+        function downloadText() {
+            const text = document.getElementById('result-text').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'youtube_transcript.txt';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

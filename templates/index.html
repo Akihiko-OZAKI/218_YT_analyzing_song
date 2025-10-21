@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube 音声分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="text-center mb-0">🎵 YouTube 音声分析アプリ</h2>
+                    </div>
+                    <div class="card-body">
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST" action="{{ url_for('process_video') }}">
+                            <div class="mb-4">
+                                <label for="url" class="form-label">
+                                    <strong>YouTube URL</strong>
+                                </label>
+                                <input type="url" class="form-control form-control-lg" id="url" name="url" 
+                                       placeholder="https://www.youtube.com/watch?v=..." required>
+                                <div class="form-text">
+                                    YouTube動画のURLを入力してください。音声が自動で抽出され、文字起こしされます。
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                    <span class="spinner-border spinner-border-sm d-none" id="spinner" role="status"></span>
+                                    <span id="btnText">🚀 分析開始</span>
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-4">
+                            <h5>📋 処理内容</h5>
+                            <ul class="list-unstyled">
+                                <li>✅ YouTube音声の自動抽出</li>
+                                <li>🧠 OpenAI Whisperによる文字起こし</li>
+                                <li>📝 テキスト結果の表示</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btnText');
+            
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            btnText.textContent = '🔄 処理中...';
+        });
+    </script>
+</body>
+</html>
