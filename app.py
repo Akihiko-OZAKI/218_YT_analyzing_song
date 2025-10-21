@@ -34,29 +34,85 @@ def process_video():
         task_id = str(uuid.uuid4())
         output_filename = f"{task_id}.%(ext)s"
         
-        # Render環境ではffmpegが利用可能なので、直接mp3変換を試行
-        try:
-            result = subprocess.run([
-                "yt-dlp",
-                "-x", "--audio-format", "mp3",
-                "--no-playlist",
-                "-o", f"{AUDIO_DIR}/{output_filename}",
-                url
-            ], capture_output=True, text=True, timeout=120)
-            
-            if result.returncode != 0:
-                # mp3が失敗した場合、m4aを試行
-                print("mp3変換失敗、m4aフォーマットで再試行...")
-                result = subprocess.run([
+        # YouTube側のボット検出を回避するための複数のアプローチ
+        download_success = False
+        attempts = [
+            # アプローチ1: 標準的な音声抽出
+            {
+                "name": "標準音声抽出",
+                "cmd": [
                     "yt-dlp",
-                    "-f", "140/m4a/bestaudio",
+                    "-f", "bestaudio",
+                    "--extract-audio",
+                    "--audio-format", "mp3",
                     "--no-playlist",
+                    "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                     "-o", f"{AUDIO_DIR}/{output_filename}",
                     url
-                ], capture_output=True, text=True, timeout=120)
+                ]
+            },
+            # アプローチ2: 異なるUser-Agent
+            {
+                "name": "異なるUser-Agent",
+                "cmd": [
+                    "yt-dlp",
+                    "-f", "bestaudio/best",
+                    "--extract-audio",
+                    "--audio-format", "mp3",
+                    "--no-playlist",
+                    "--user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                    "-o", f"{AUDIO_DIR}/{output_filename}",
+                    url
+                ]
+            },
+            # アプローチ3: 動画から抽出
+            {
+                "name": "動画から音声抽出",
+                "cmd": [
+                    "yt-dlp",
+                    "-f", "best[height<=480]",
+                    "--extract-audio",
+                    "--audio-format", "mp3",
+                    "--no-playlist",
+                    "--user-agent", "Mozilla/5.0 (compatible; Googlebot/2.1)",
+                    "-o", f"{AUDIO_DIR}/{output_filename}",
+                    url
+                ]
+            }
+        ]
+        
+        last_error = ""
+        try:
+            for attempt in attempts:
+                print(f"ダウンロード試行: {attempt['name']}")
+                result = subprocess.run(
+                    attempt["cmd"],
+                    capture_output=True, 
+                    text=True, 
+                    timeout=180
+                )
+                
+                if result.returncode == 0:
+                    download_success = True
+                    print(f"成功: {attempt['name']}")
+                    break
+                else:
+                    print(f"失敗: {attempt['name']} - {result.stderr}")
+                    last_error = result.stderr
             
-            if result.returncode != 0:
-                flash(f'YouTube動画のダウンロードに失敗しました: {result.stderr}')
+            if not download_success:
+                # より具体的なエラーメッセージ
+                if "Sign in to confirm you're not a bot" in last_error:
+                    error_msg = """YouTube側のセキュリティ制限により、この動画の処理ができない可能性があります。
+
+対処方法：
+1. 別のYoutube動画URLを試してください
+2. しばらく時間をおいてから再試行してください
+3. 動画がプライベートまたは年齢制限されている場合は処理できません"""
+                else:
+                    error_msg = f"YouTube動画のダウンロードに失敗しました: {last_error[:300]}"
+                
+                flash(error_msg)
                 return redirect(url_for('index'))
                 
         except subprocess.TimeoutExpired:
