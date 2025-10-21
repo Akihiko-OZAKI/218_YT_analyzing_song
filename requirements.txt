@@ -1,6 +1,5 @@
-Flask==2.3.3
-openai-whisper==20231117
-yt-dlp==2023.10.13
-tqdm==4.66.1
-Werkzeug==2.3.7
+Flask==3.0.0
+openai-whisper
+yt-dlp
+tqdm
 gunicorn==21.2.0
